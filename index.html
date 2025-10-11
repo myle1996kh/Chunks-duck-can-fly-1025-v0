@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>English Speaking Fluency Game</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            margin: 0;
+            padding: 20px;
+        }
+        
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            max-width: 500px;
+            width: 100%;
+        }
+        
+        h1 {
+            color: #333;
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            font-weight: 700;
+        }
+        
+        .subtitle {
+            color: #666;
+            font-size: 1.2rem;
+            margin-bottom: 30px;
+        }
+
+        .button-group {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .btn {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-desktop {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-mobile {
+            background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+            color: white;
+        }
+
+        .device-info {
+            margin-top: 30px;
+            padding: 20px;
+            background: rgba(102, 126, 234, 0.1);
+            border-radius: 10px;
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .feature-list {
+            text-align: left;
+            margin: 20px 0;
+        }
+
+        .feature-list li {
+            margin: 8px 0;
+            color: #555;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 30px 20px;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .subtitle {
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 English Speaking Fluency Game</h1>
+        <p class="subtitle">Choose your platform to start practicing!</p>
+        
+        <div class="button-group">
+            <a href="frontend.html" class="btn btn-desktop">
+                🖥️ Desktop Version
+            </a>
+            <a href="mobile.html" class="btn btn-mobile">
+                📱 Mobile Version
+            </a>
+        </div>
+
+        <div class="device-info">
+            <h3>📱 Mobile Features:</h3>
+            <ul class="feature-list">
+                <li>✅ Touch-friendly controls</li>
+                <li>✅ Responsive design</li>
+                <li>✅ Fullscreen mode</li>
+                <li>✅ Optimized for phones</li>
+            </ul>
+            
+            <h3>🖥️ Desktop Features:</h3>
+            <ul class="feature-list">
+                <li>✅ Full control panel</li>
+                <li>✅ Keyboard shortcuts</li>
+                <li>✅ Advanced settings</li>
+                <li>✅ Large display</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // Auto-detect mobile and redirect
+        function isMobile() {
+            return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        }
+        
+        // Auto-redirect mobile users to mobile version
+        if (isMobile()) {
+            // Show a brief message before redirecting
+            document.querySelector('.container').innerHTML = `
+                <h1>🎯 English Speaking Fluency Game</h1>
+                <p class="subtitle">Redirecting to mobile version...</p>
+                <div style="margin: 20px 0;">
+                    <div style="width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #667eea; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto;"></div>
+                </div>
+                <style>
+                    @keyframes spin {
+                        0% { transform: rotate(0deg); }
+                        100% { transform: rotate(360deg); }
+                    }
+                </style>
+            `;
+            
+            setTimeout(() => {
+                window.location.href = 'mobile.html';
+            }, 1500);
+        }
+    </script>
+</body>
+</html>

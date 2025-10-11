@@ -1,0 +1,2542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DUCK CAN FLY Game - Professional Edition</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/papaparse/5.4.1/papaparse.min.js"></script>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #74b9ff, #0984e3);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .game-container {
+            display: flex;
+            gap: 20px;
+            max-width: 1400px;
+            width: 100%;
+        }
+
+        .game-area {
+            flex: 1;
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .controls-panel {
+            width: 350px;
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+        }
+        
+        .controls-panel.hidden {
+            width: 0;
+            padding: 0;
+            overflow: hidden;
+            opacity: 0;
+        }
+        
+        .game-area.fullscreen {
+            flex: 1;
+            width: 100%;
+            height: 100vh;
+            position: relative;
+        }
+        
+        .game-area.fullscreen #gameCanvas {
+            width: 100%;
+            height: 100%;
+            border: none;
+            border-radius: 0;
+        }
+        
+        .toggle-controls-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            font-size: 20px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            transition: all 0.3s ease;
+        }
+        
+        .toggle-controls-btn:hover {
+            background: #0056b3;
+            transform: scale(1.1);
+        }
+        
+        .toggle-controls-btn.controls-hidden {
+            background: #28a745;
+        }
+        
+        .fullscreen-btn {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            width: 40px;
+            height: 40px;
+            font-size: 18px;
+            cursor: pointer;
+            z-index: 100;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .fullscreen-btn:hover {
+            background: rgba(0, 0, 0, 0.9);
+            transform: scale(1.1);
+        }
+        
+        .game-area {
+            position: relative;
+        }
+
+        #gameCanvas {
+            border: 3px solid #ddd;
+            border-radius: 10px;
+            background: linear-gradient(to bottom, #87CEEB 0%, #98FB98 100%);
+            display: block;
+            margin: 0 auto;
+        }
+
+        .instruction-display {
+            background: #e3f2fd;
+            border: 2px solid #2196f3;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 15px 0;
+            text-align: center;
+            color: #1565c0;
+        }
+
+        .instruction-display h3 {
+            margin: 0 0 10px 0;
+            color: #0d47a1;
+        }
+
+        .instruction-display p {
+            margin: 5px 0;
+            font-size: 16px;
+        }
+
+        .progress-container {
+            margin: 15px 0;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #28a745, #20c997);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .controls-group {
+            margin: 15px 0;
+        }
+
+        .controls-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #495057;
+        }
+
+        .slider {
+            width: 100%;
+            height: 8px;
+            border-radius: 5px;
+            background: #ddd;
+            outline: none;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #007bff;
+            cursor: pointer;
+        }
+
+        .value-display {
+            text-align: center;
+            font-weight: bold;
+            color: #007bff;
+            margin-top: 5px;
+        }
+
+        .file-upload {
+            margin: 15px 0;
+            padding: 15px;
+            border: 2px dashed #007bff;
+            border-radius: 10px;
+            text-align: center;
+            background: #f8f9ff;
+        }
+
+        .sentence-selector, .student-selector {
+            margin: 15px 0;
+        }
+
+        .sentence-selector select, .student-selector select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e9ecef;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #0056b3;
+            transform: translateY(-2px);
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #1e7e34;
+            transform: translateY(-2px);
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+            transform: translateY(-2px);
+        }
+
+        .btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .results-panel {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 15px 0;
+            display: none;
+        }
+
+        .results-panel.show {
+            display: block;
+        }
+
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 8px 0;
+            padding: 8px;
+            background: white;
+            border-radius: 5px;
+        }
+
+        .result-label {
+            font-weight: bold;
+            color: #495057;
+        }
+
+        .result-value {
+            color: #007bff;
+            font-weight: bold;
+        }
+
+        .status-indicator {
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
+        .status-listening {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status-speaking {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+
+        .status-silent {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .status-processing {
+            background: #cce5ff;
+            color: #004085;
+            border: 1px solid #99d6ff;
+        }
+
+        h1 {
+            color: white;
+            text-align: center;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .game-title {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .game-subtitle {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .score-display {
+            text-align: center;
+            font-size: 2em;
+            font-weight: bold;
+            margin: 20px 0;
+            padding: 20px;
+            border-radius: 10px;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .score-excellent {
+            background: linear-gradient(45deg, #4ecdc4, #44a08d);
+        }
+
+        .score-good {
+            background: linear-gradient(45deg, #a8e6cf, #7fcdcd);
+        }
+
+        .score-average {
+            background: linear-gradient(45deg, #ffd93d, #ff6b6b);
+        }
+
+        .score-poor {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a52);
+        }
+
+        /* Popup Modal Styles */
+        .modal-overlay {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            background: rgba(0, 0, 0, 0.9) !important;
+            z-index: 99999 !important;
+            display: flex !important;
+            justify-content: center !important;
+            align-items: flex-start !important;
+            animation: fadeIn 0.3s ease !important;
+            overflow-y: auto !important;
+            padding: 20px !important;
+            box-sizing: border-box !important;
+        }
+
+        .modal-content {
+            background: white !important;
+            border-radius: 20px !important;
+            padding: 30px !important;
+            max-width: 600px !important;
+            width: 90% !important;
+            text-align: center !important;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5) !important;
+            animation: slideIn 0.4s ease !important;
+            position: relative !important;
+            margin: 20px auto !important;
+            max-height: 85vh !important;
+            overflow-y: auto !important;
+        }
+
+        .modal-header {
+            margin-bottom: 20px;
+        }
+
+        .modal-title {
+            font-size: 2em;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .modal-score {
+            font-size: 3em;
+            font-weight: bold;
+            margin: 20px 0;
+            padding: 20px;
+            border-radius: 15px;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-details {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+            padding: 8px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+
+        .detail-label {
+            font-weight: bold;
+            color: #495057;
+        }
+
+        .detail-value {
+            color: #007bff;
+            font-weight: bold;
+        }
+
+        .pause-breakdown {
+            background: #fff3cd;
+            border: 2px solid #ffeaa7;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+
+        .pause-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 5px 0;
+            padding: 5px 0;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 25px;
+        }
+
+        .modal-btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 120px;
+        }
+
+        .modal-btn-primary {
+            background: #007bff;
+            color: white;
+        }
+
+        .modal-btn-primary:hover {
+            background: #0056b3;
+            transform: translateY(-2px);
+        }
+
+        .modal-btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .modal-btn-secondary:hover {
+            background: #545b62;
+            transform: translateY(-2px);
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #6c757d;
+            transition: color 0.3s ease;
+        }
+
+        .close-btn:hover {
+            color: #dc3545;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideIn {
+            from { 
+                opacity: 0;
+                transform: translateY(-50px) scale(0.9);
+            }
+            to { 
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>
+        <div class="game-title">🎤 DUCK CAN FLY Game</div>
+    </h1>
+    
+    <button id="toggleControlsBtn" class="toggle-controls-btn" title="Toggle Controls Panel">⚙️</button>
+
+    <div class="game-container">
+        <div class="game-area">
+            <canvas id="gameCanvas" width="700" height="400"></canvas>
+            <button id="fullscreenBtn" class="fullscreen-btn" title="Toggle Fullscreen">⛶</button>
+            
+            <div class="instruction-display" id="instructionDisplay">
+                <h3>🎯 Professional Speaking Practice</h3>
+                <p><strong>Controls:</strong> Press SPACEBAR to start/stop</p>
+                <p><strong>Fullscreen:</strong> Click ⛶ button or press F for true fullscreen</p>
+                <p><strong>Hide Controls:</strong> Click ⚙️ button or press ESC</p>
+            </div>
+
+            <div class="progress-container" style="display: none;">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <div style="text-align: center; margin-top: 5px; font-weight: bold; color: #495057;">
+                    Progress: <span id="progressText">0%</span>
+                </div>
+            </div>
+
+            <div class="status-indicator" id="statusIndicator">
+                Ready to start
+            </div>
+
+            <div class="score-display" id="scoreDisplay" style="display: none;">
+                <div id="scoreText">Score: 0</div>
+                <div id="scoreMessage">Keep practicing!</div>
+            </div>
+        </div>
+
+        <div class="controls-panel">
+            <div class="file-upload" style="display: none;">
+                <h3>📁 Load Sentences</h3>
+                <input type="file" id="csvFile" accept=".csv,.xlsx,.xls">
+                <p style="font-size: 12px; color: #666; margin: 5px 0;">
+                    Upload a CSV file with columns: id, sentence
+                </p>
+            </div>
+
+            <div class="sentence-selector">
+                <label for="sentenceSelect">Select Sentence:</label>
+                <select id="sentenceSelect">
+                    <option>Loading sentences...</option>
+                </select>
+            </div>
+
+            <div class="student-selector">
+                <label for="studentSelect">👨‍🎓 Select Student:</label>
+                <select id="studentSelect">
+                    <option value="1">Default Student</option>
+                </select>
+                <button id="manageStudentsBtn" class="btn btn-primary" style="margin-top: 10px; background: #48bb78;">
+                    Manage Students
+                </button>
+            </div>
+
+            <div class="controls-group">
+                <label for="volumeThreshold">Volume Threshold:</label>
+                <input type="range" id="volumeThreshold" class="slider" min="0" max="100" value="60">
+                <div class="value-display" id="volumeValue">60</div>
+                <div style="font-size: 12px; color: #666; margin-top: 5px;">
+                    <strong>How it affects the bird:</strong><br>
+                    • 60-70 dB = Normal speech (recommended)<br>
+                    • 50-60 dB = Soft speech<br>
+                    • 70+ dB = Loud speech<br>
+                    • Adjust based on your microphone sensitivity
+                </div>
+            </div>
+
+            <div class="controls-group">
+                <label for="pauseThreshold">Pause Threshold (s):</label>
+                <input type="range" id="pauseThreshold" class="slider" min="0.1" max="3.0" value="0.5" step="0.1">
+                <div class="value-display" id="pauseValue">0.5s</div>
+                <div style="font-size: 12px; color: #666; margin-top: 5px;">
+                    <strong>How it affects the bird:</strong><br>
+                    • 0.5s = Quick response (recommended)<br>
+                    • 1.0s = Normal speaking pace<br>
+                    • 1.5s+ = Slower speaking pace<br>
+                    • Adjust based on your speaking style
+                </div>
+            </div>
+
+            <div class="button-group">
+                <button id="startBtn" class="btn btn-primary">Start Game</button>
+                <button id="stopBtn" class="btn btn-danger" disabled>Stop Game</button>
+            </div>
+
+            <div class="button-group">
+                <button id="exportBtn" class="btn btn-success" disabled>Export Results</button>
+                <button id="resetBtn" class="btn btn-primary">Reset</button>
+            </div>
+            
+            <div class="button-group" style="display: none;">
+                <button id="wpmInfoBtn" class="btn btn-primary" style="background: #6c757d;">WPM Calculation Info</button>
+            </div>
+
+            <div class="results-panel" id="resultsPanel">
+                <h3>📊 Professional Analysis Results</h3>
+                <div class="result-item">
+                    <span class="result-label">Fluency Score:</span>
+                    <span class="result-value" id="fluencyScoreResult">-</span>
+                </div>
+                <div class="result-item">
+                    <span class="result-label">Total Duration:</span>
+                    <span class="result-value" id="totalDurationResult">-</span>
+                </div>
+                <div class="result-item">
+                    <span class="result-label">Time to First Pause:</span>
+                    <span class="result-value" id="firstPauseResult">-</span>
+                </div>
+                <div class="result-item">
+                    <span class="result-label">Volume Consistency:</span>
+                    <span class="result-value" id="volumeConsistencyResult">-</span>
+                </div>
+                <div class="result-item">
+                    <span class="result-label">Speech Rate (WPS):</span>
+                    <span class="result-value" id="speechRateResult">-</span>
+                </div>
+            </div>
+            
+            <div class="results-panel" id="wpmExplanation" style="display: none;">
+                <h3>📊 WPM Calculation Method</h3>
+                <div style="font-size: 14px; color: #666; line-height: 1.6;">
+                    <p><strong>How WPM (Words Per Minute) is calculated:</strong></p>
+                    <ol>
+                        <li><strong>Spectral Analysis:</strong> Analyzes audio frequency content using FFT (Fast Fourier Transform)</li>
+                        <li><strong>Syllable Detection:</strong> Finds peaks in spectral centroid to identify potential syllables</li>
+                        <li><strong>Speech Filtering:</strong> Only counts syllables during actual speech segments (not silence)</li>
+                        <li><strong>Conversion:</strong> Converts syllables to words using 1.5 syllables per word ratio</li>
+                        <li><strong>WPM Calculation:</strong> (Syllables per second ÷ 1.5) × 60</li>
+                    </ol>
+                    <p><strong>Why this method is accurate:</strong></p>
+                    <ul>
+                        <li>• Uses advanced signal processing instead of simple time estimation</li>
+                        <li>• Accounts for speech pauses and silence periods</li>
+                        <li>• Provides detailed syllable detection metrics</li>
+                        <li>• More reliable than duration-based calculations</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Game state
+        let gameState = {
+            isRunning: false,
+            isListening: false,
+            currentSentence: null,
+            sentences: [],
+            audioContext: null,
+            analyser: null,
+            microphone: null,
+            dataArray: null,
+            animationId: null,
+            mediaRecorder: null,
+            audioChunks: [],
+            
+            // Game mechanics
+            bird: {
+                x: 100, // Fixed position on screen
+                y: 200,
+                velocity: 0,
+                gravity: 0.5,
+                jumpPower: -8,
+                targetY: 200,
+                isFalling: false,
+                forwardSpeed: 2 // Speed of forward movement
+            },
+            
+            // Scrolling background
+            background: {
+                offset: 0,
+                speed: 2,
+                clouds: [],
+                obstacles: []
+            },
+            
+            // Scoring
+            startTime: null,
+            firstPauseTime: null,
+            firstPauseDetected: false,
+            lastSpeakingTime: null,
+            isSpeaking: false,
+            scores: [],
+            currentVolume: 0,
+            totalSpeakingTime: 0,
+            lastVolumeCheck: null,
+            firstSpeakingTime: null,
+            stopTime: null,
+            
+            // Pause tracking
+            pauseCount: 0,
+            pauseTimes: [],
+            currentPauseStart: null,
+            totalPauseTime: 0,
+            
+            // Settings
+            volumeThreshold: 60,
+            pauseThreshold: 500, // Still in ms for internal calculations
+            
+            // Canvas
+            canvas: null,
+            ctx: null,
+            
+            // Backend
+            backendUrl: 'http://localhost:8000',  // ✅ Local backend - Start with: python backend/main.py
+            currentSessionId: null,
+            
+            // Sound control
+            hasPlayedResultSound: false,
+            
+            // UI control
+            controlsVisible: true,
+            isFullscreen: false,
+            hasDetectedFirstSound: false, // Track if we've detected first sound
+
+            // Preloaded audio elements
+            winnerAudio: null,
+            gameoverAudio: null
+        };
+
+        // ✅ Load students from backend
+        async function loadStudents() {
+            try {
+                const response = await fetch(`${gameState.backendUrl}/students`);
+                const students = await response.json();
+
+                const select = document.getElementById('studentSelect');
+                select.innerHTML = '';
+
+                if (students.length === 0) {
+                    select.innerHTML = '<option value="1">Default Student (No students found)</option>';
+                } else {
+                    students.forEach(student => {
+                        const option = document.createElement('option');
+                        option.value = student.id;
+                        option.textContent = student.name;
+                        select.appendChild(option);
+                    });
+                }
+
+                console.log(`✅ Loaded ${students.length} students`);
+            } catch (error) {
+                console.error('❌ Error loading students:', error);
+                document.getElementById('studentSelect').innerHTML = '<option value="1">Default Student (Error loading students)</option>';
+            }
+        }
+
+        // Initialize the game
+        async function initGame() {
+            gameState.canvas = document.getElementById('gameCanvas');
+            gameState.ctx = gameState.canvas.getContext('2d');
+
+            // Set up responsive canvas
+            setupResponsiveCanvas();
+
+            // Set up event listeners
+            setupEventListeners();
+
+            // ✅ Load students
+            await loadStudents();
+
+            // Initialize audio context
+            initAudio();
+
+            // ✅ PRELOAD audio files for result sounds
+            preloadResultAudio();
+
+            // Request microphone permission on startup
+            await requestMicrophonePermission();
+
+            // Initialize background elements
+            initBackground();
+
+            // Load sentences from backend
+            await loadSentencesFromBackend();
+
+            // Start game loop
+            gameLoop();
+        }
+
+        // ✅ Preload audio files to avoid loading delay
+        function preloadResultAudio() {
+            console.log('🔊 Preloading result audio files...');
+
+            // Preload winner audio
+            gameState.winnerAudio = new Audio('./winner.mp3');
+            gameState.winnerAudio.volume = 0.7;
+            gameState.winnerAudio.preload = 'auto';
+            gameState.winnerAudio.addEventListener('canplaythrough', () => {
+                console.log('✅ winner.mp3 loaded');
+            });
+            gameState.winnerAudio.addEventListener('error', (e) => {
+                console.error('❌ Failed to load winner.mp3:', e);
+            });
+
+            // Preload gameover audio
+            gameState.gameoverAudio = new Audio('./gameover.mp3');
+            gameState.gameoverAudio.volume = 0.7;
+            gameState.gameoverAudio.preload = 'auto';
+            gameState.gameoverAudio.addEventListener('canplaythrough', () => {
+                console.log('✅ gameover.mp3 loaded');
+            });
+            gameState.gameoverAudio.addEventListener('error', (e) => {
+                console.error('❌ Failed to load gameover.mp3:', e);
+            });
+        }
+        
+        function setupResponsiveCanvas() {
+            function resizeCanvas() {
+                const gameArea = document.querySelector('.game-area');
+                const isFullscreen = gameArea.classList.contains('fullscreen');
+                
+                if (isFullscreen) {
+                    // Fullscreen mode
+                    gameState.canvas.width = window.innerWidth;
+                    gameState.canvas.height = window.innerHeight;
+                } else {
+                    // Normal mode
+                    gameState.canvas.width = 700;
+                    gameState.canvas.height = 400;
+                }
+            }
+            
+            // Initial resize
+            resizeCanvas();
+            
+            // Resize on window resize
+            window.addEventListener('resize', resizeCanvas);
+        }
+        
+        async function requestMicrophonePermission() {
+            try {
+                // Request microphone access immediately on page load
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                
+                // Store the stream for later use
+                gameState.microphoneStream = stream;
+                
+                // Update status to show permission granted
+                document.getElementById('statusIndicator').textContent = 'Microphone ready! Select a sentence and press SPACEBAR to start!';
+                document.getElementById('statusIndicator').className = 'status-indicator status-listening';
+                
+                console.log('Microphone permission granted');
+                
+            } catch (error) {
+                console.error('Microphone permission denied:', error);
+                document.getElementById('statusIndicator').textContent = 'Microphone permission required! Please allow microphone access and refresh the page.';
+                document.getElementById('statusIndicator').className = 'status-indicator status-silent';
+                
+                // Show permission request message
+                showPermissionMessage();
+            }
+        }
+        
+        function showPermissionMessage() {
+            const messageDiv = document.createElement('div');
+            messageDiv.innerHTML = `
+                <div style="
+                    position: fixed;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    background: rgba(0, 0, 0, 0.9);
+                    color: white;
+                    padding: 30px;
+                    border-radius: 15px;
+                    font-size: 18px;
+                    font-weight: bold;
+                    z-index: 1000;
+                    text-align: center;
+                    max-width: 500px;
+                ">
+                    <h3>🎤 Microphone Permission Required</h3>
+                    <p>This game needs access to your microphone to analyze your speech.</p>
+                    <p>Please click "Allow" when prompted, or check your browser settings.</p>
+                    <button onclick="location.reload()" style="
+                        background: #007bff;
+                        color: white;
+                        border: none;
+                        padding: 10px 20px;
+                        border-radius: 5px;
+                        font-size: 16px;
+                        cursor: pointer;
+                        margin-top: 15px;
+                    ">Refresh Page</button>
+                </div>
+            `;
+            document.body.appendChild(messageDiv);
+        }
+        
+        function initBackground() {
+            // Create initial clouds
+            for (let i = 0; i < 5; i++) {
+                gameState.background.clouds.push({
+                    x: Math.random() * gameState.canvas.width * 2,
+                    y: Math.random() * 150 + 50,
+                    size: Math.random() * 30 + 20,
+                    speed: Math.random() * 0.5 + 0.5
+                });
+            }
+            
+            // Create initial obstacles
+            for (let i = 0; i < 3; i++) {
+                gameState.background.obstacles.push({
+                    x: Math.random() * gameState.canvas.width * 2,
+                    y: gameState.canvas.height - 50,
+                    width: 20,
+                    height: 50
+                });
+            }
+        }
+
+        async function loadSentencesFromBackend() {
+            // ✅ LOAD FROM CSV FILE: Load sentences from backend/sample_sentences.csv only
+            try {
+                const response = await fetch('./backend/sample_sentences.csv');
+                const csvText = await response.text();
+
+                // Parse CSV manually (simple parser for id,sentence format)
+                const lines = csvText.split('\n').filter(line => line.trim());
+                const sentences = [];
+
+                // Skip header row (line 0)
+                for (let i = 1; i < lines.length; i++) {
+                    const line = lines[i].trim();
+                    if (!line) continue;
+
+                    // Parse CSV line (handle quoted strings)
+                    const match = line.match(/^(\d+),\"?(.+?)\"?$/);
+                    if (match) {
+                        sentences.push({
+                            id: parseInt(match[1]),
+                            sentence: match[2].replace(/^"|"$/g, '') // Remove quotes
+                        });
+                    }
+                }
+
+                gameState.sentences = sentences;
+
+                // Populate sentence selector
+                const select = document.getElementById('sentenceSelect');
+                select.innerHTML = '';
+                select.disabled = false; // ✅ ENABLED: Can select different sentences
+
+                sentences.forEach((sentence, index) => {
+                    const option = document.createElement('option');
+                    option.value = sentence.id;
+                    option.textContent = sentence.sentence;
+                    select.appendChild(option);
+                });
+
+                // ✅ ALWAYS select FIRST sentence only
+                if (sentences.length > 0) {
+                    select.selectedIndex = 0;
+                    selectSentence();
+                }
+
+            } catch (error) {
+                console.error('Error loading sentences from CSV:', error);
+                // Fallback to hardcoded data
+                loadDummyData();
+            }
+        }
+
+        function loadDummyData() {
+            // ✅ FALLBACK: Use hardcoded sentences from sample_sentences.csv
+            const dummySentences = [
+                { id: 1, sentence: "In terms of email, the recipient list always comes first" },
+                { id: 2, sentence: "Don't get me wrong, I haven't said anything doesn't mean I know nothing" },
+                { id: 3, sentence: "The quick brown fox jumps over the lazy dog" },
+                { id: 4, sentence: "She sells seashells by the seashore" },
+                { id: 5, sentence: "How much wood would a woodchuck chuck if a woodchuck could chuck wood" },
+                { id: 6, sentence: "Peter Piper picked a peck of pickled peppers" },
+                { id: 7, sentence: "The rain in Spain falls mainly on the plain" },
+                { id: 8, sentence: "To be or not to be, that is the question" },
+                { id: 9, sentence: "A journey of a thousand miles begins with a single step" },
+                { id: 10, sentence: "Practice makes perfect" }
+            ];
+
+            gameState.sentences = dummySentences;
+
+            const select = document.getElementById('sentenceSelect');
+            select.innerHTML = '';
+            select.disabled = false; // ✅ ENABLED: Can select different sentences
+
+            dummySentences.forEach((sentence, index) => {
+                const option = document.createElement('option');
+                option.value = sentence.id;
+                option.textContent = sentence.sentence;
+                select.appendChild(option);
+            });
+
+            // ✅ ALWAYS select FIRST sentence only
+            if (dummySentences.length > 0) {
+                select.selectedIndex = 0;
+                selectSentence();
+            }
+        }
+
+        function setupEventListeners() {
+            // File upload
+            document.getElementById('csvFile').addEventListener('change', handleFileUpload);
+            
+            // Sentence selection
+            document.getElementById('sentenceSelect').addEventListener('change', selectSentence);
+            
+            // Controls
+            document.getElementById('volumeThreshold').addEventListener('input', updateVolumeThreshold);
+            document.getElementById('pauseThreshold').addEventListener('input', updatePauseThreshold);
+            
+            // Buttons
+            document.getElementById('startBtn').addEventListener('click', startGame);
+            document.getElementById('stopBtn').addEventListener('click', stopGame);
+            document.getElementById('exportBtn').addEventListener('click', exportResults);
+            document.getElementById('resetBtn').addEventListener('click', resetGame);
+            document.getElementById('wpmInfoBtn').addEventListener('click', toggleWpmInfo);
+            document.getElementById('toggleControlsBtn').addEventListener('click', toggleControlsPanel);
+            document.getElementById('fullscreenBtn').addEventListener('click', toggleFullscreen);
+            document.getElementById('manageStudentsBtn').addEventListener('click', () => {
+                window.open('students.html', '_blank');
+            });
+
+            // Keyboard controls
+            document.addEventListener('keydown', function(event) {
+                if (event.code === 'Space') {
+                    event.preventDefault();
+                    if (gameState.isRunning) {
+                        stopGame();
+                    } else if (gameState.currentSentence) {
+                        startGame();
+                    }
+                } else if (event.code === 'KeyH' && (event.ctrlKey || event.metaKey)) {
+                    event.preventDefault();
+                    toggleControlsPanel();
+                } else if (event.code === 'Escape') {
+                    // ESC key to hide controls panel
+                    if (gameState.controlsVisible) {
+                        toggleControlsPanel();
+                    }
+                } else if (event.code === 'KeyF') {
+                    // F key for fullscreen toggle
+                    event.preventDefault();
+                    toggleFullscreen();
+                }
+            });
+        }
+
+        function initAudio() {
+            try {
+                gameState.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                gameState.analyser = gameState.audioContext.createAnalyser();
+                gameState.analyser.fftSize = 256;
+                gameState.dataArray = new Uint8Array(gameState.analyser.frequencyBinCount);
+            } catch (error) {
+                console.error('Audio initialization failed:', error);
+                alert('Audio initialization failed. Please check your microphone permissions.');
+            }
+        }
+
+        async function startGame() {
+            if (!gameState.currentSentence) {
+                alert('Please select a sentence first!');
+                return;
+            }
+
+            try {
+                // Use pre-requested microphone stream
+                if (!gameState.microphoneStream) {
+                    throw new Error('Microphone not available. Please refresh the page and allow microphone access.');
+                }
+                
+                if (gameState.audioContext.state === 'suspended') {
+                    await gameState.audioContext.resume();
+                }
+
+                // ✅ ENABLE audio playback by interacting with preloaded audio
+                // This unlocks autoplay policy
+                if (gameState.winnerAudio && gameState.winnerAudio.paused) {
+                    console.log('🔓 Unlocking audio playback...');
+                    try {
+                        // Play and immediately pause to unlock audio
+                        gameState.winnerAudio.volume = 0; // Silent
+                        await gameState.winnerAudio.play();
+                        gameState.winnerAudio.pause();
+                        gameState.winnerAudio.currentTime = 0;
+                        gameState.winnerAudio.volume = 0.7; // Restore volume
+                        console.log('✅ Audio playback unlocked!');
+                    } catch (e) {
+                        console.log('⚠️ Could not unlock audio:', e.message);
+                    }
+                }
+
+                gameState.microphone = gameState.audioContext.createMediaStreamSource(gameState.microphoneStream);
+                gameState.microphone.connect(gameState.analyser);
+                
+                // Set up media recorder for audio capture
+                try {
+                    gameState.mediaRecorder = new MediaRecorder(gameState.microphoneStream, {
+                        mimeType: 'audio/webm;codecs=opus'
+                    });
+                    gameState.audioChunks = [];
+                    
+                    gameState.mediaRecorder.ondataavailable = (event) => {
+                        if (event.data.size > 0) {
+                            gameState.audioChunks.push(event.data);
+                            console.log('Audio chunk received:', event.data.size, 'bytes, total chunks:', gameState.audioChunks.length);
+                        }
+                    };
+                    
+                    gameState.mediaRecorder.onstop = () => {
+                        console.log('MediaRecorder stopped, total chunks:', gameState.audioChunks.length);
+                        if (gameState.audioChunks.length > 0) {
+                            console.log('Audio chunks available for processing');
+                            // Calculate total size
+                            let totalSize = 0;
+                            gameState.audioChunks.forEach((chunk, index) => {
+                                totalSize += chunk.size;
+                                console.log(`Chunk ${index}: ${chunk.size} bytes`);
+                            });
+                            console.log(`Total audio size: ${totalSize} bytes`);
+                        } else {
+                            console.log('WARNING: No audio chunks collected!');
+                        }
+                    };
+                    
+                    gameState.mediaRecorder.onerror = (event) => {
+                        console.error('MediaRecorder error:', event.error);
+                    };
+
+                    gameState.mediaRecorder.start(100); // Record in 100ms chunks for smoother audio
+                    console.log('MediaRecorder started with mimeType:', gameState.mediaRecorder.mimeType);
+                } catch (error) {
+                    console.error('Error setting up MediaRecorder:', error);
+                    // Fallback: try without mimeType
+                    try {
+                        gameState.mediaRecorder = new MediaRecorder(gameState.microphoneStream);
+                        gameState.audioChunks = [];
+                        gameState.mediaRecorder.ondataavailable = (event) => {
+                            if (event.data.size > 0) {
+                                gameState.audioChunks.push(event.data);
+                                console.log('Audio chunk received (fallback):', event.data.size, 'bytes');
+                            }
+                        };
+                        gameState.mediaRecorder.start(100); // Use 100ms chunks for fallback too
+                        console.log('MediaRecorder started (fallback mode)');
+                    } catch (fallbackError) {
+                        console.error('Fallback MediaRecorder also failed:', fallbackError);
+                    }
+                }
+                
+                gameState.isRunning = true;
+                gameState.isListening = true;
+                gameState.startTime = Date.now();
+                gameState.firstPauseDetected = false;
+                gameState.isSpeaking = false;
+                gameState.lastSpeakingTime = null;
+                gameState.totalSpeakingTime = 0;
+                gameState.lastVolumeCheck = null;
+                gameState.firstSpeakingTime = null;
+                gameState.stopTime = null;
+                gameState.hasPlayedResultSound = false;
+                
+                // Reset pause tracking
+                gameState.pauseCount = 0;
+                gameState.pauseTimes = [];
+                gameState.currentPauseStart = null;
+                gameState.totalPauseTime = 0;
+                
+                // Reset bird position
+                gameState.bird.y = 200;
+                gameState.bird.velocity = 0;
+                gameState.bird.isFalling = false;
+                
+                // Update UI
+                document.getElementById('startBtn').disabled = true;
+                document.getElementById('stopBtn').disabled = false;
+                document.getElementById('statusIndicator').textContent = 'Listening...';
+                document.getElementById('statusIndicator').className = 'status-indicator status-listening';
+                
+                updateProgress();
+                
+            } catch (error) {
+                console.error('Microphone access failed:', error);
+                alert('Failed to access microphone. Please check your permissions.');
+            }
+        }
+
+        async function stopGame(playSounds = true) {
+            gameState.isRunning = false;
+            gameState.isListening = false;
+            gameState.stopTime = Date.now();
+            
+            // End current pause if we're in one
+            if (gameState.currentPauseStart) {
+                const pauseDuration = gameState.stopTime - gameState.currentPauseStart;
+                gameState.pauseTimes.push(pauseDuration);
+                gameState.totalPauseTime += pauseDuration;
+                gameState.pauseCount = gameState.pauseTimes.length; // Sync pauseCount with actual pauses
+                gameState.currentPauseStart = null;
+                console.log('Final pause recorded:', pauseDuration, 'ms');
+            }
+            
+            console.log('Game stopped - Total pauses:', gameState.pauseCount, 'Pause times:', gameState.pauseTimes);
+            
+            if (gameState.mediaRecorder && gameState.mediaRecorder.state === 'recording') {
+                console.log('Stopping MediaRecorder...');
+                gameState.mediaRecorder.stop();
+            } else {
+                console.log('MediaRecorder not recording or not available');
+            }
+            
+            if (gameState.microphone) {
+                gameState.microphone.disconnect();
+                gameState.microphone = null;
+            }
+            
+            // Update UI
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('stopBtn').disabled = true;
+            document.getElementById('exportBtn').disabled = false;
+            document.getElementById('statusIndicator').textContent = 'Processing audio...';
+            document.getElementById('statusIndicator').className = 'status-indicator status-processing';
+            
+            // Process audio with backend (only if playSounds is true)
+            if (playSounds) {
+                await processAudioWithBackend();
+            } else {
+                // Just update UI without processing audio
+                document.getElementById('statusIndicator').textContent = 'Game stopped';
+                document.getElementById('statusIndicator').className = 'status-indicator status-silent';
+            }
+        }
+
+        async function processAudioWithBackend() {
+            try {
+                console.log('Starting audio processing...');
+                console.log('Audio chunks available:', gameState.audioChunks.length);
+
+                if (gameState.audioChunks.length === 0) {
+                    console.error('No audio chunks available!');
+                    throw new Error('No audio data recorded');
+                }
+
+                // Create audio blob from chunks
+                const audioBlob = new Blob(gameState.audioChunks, { type: 'audio/webm' });
+
+                // Generate short filename with timestamp
+                const now = new Date();
+                const timestamp = now.getTime().toString().slice(-8); // Last 8 digits
+                const filename = `rec_${timestamp}.webm`;
+
+                console.log(`Processing audio file: ${filename}, size: ${audioBlob.size} bytes`);
+
+                // ✅ DEBUG: Optionally download audio file to local machine for verification
+                // UNCOMMENT BELOW TO ENABLE AUTO-DOWNLOAD FOR DEBUGGING:
+                /*
+                console.log('💾 Downloading audio file locally for verification...');
+                const downloadUrl = window.URL.createObjectURL(audioBlob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = downloadUrl;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(downloadUrl);
+                document.body.removeChild(a);
+                console.log('✅ Audio file downloaded:', filename);
+                */
+
+                // ✅ Calculate local analysis FIRST (always available)
+                const localAnalysis = calculateLocalScore();
+
+                // ✅ Get selected student ID
+                const selectedStudentId = document.getElementById('studentSelect').value;
+
+                // Create form data
+                const formData = new FormData();
+                formData.append('file', audioBlob, filename);
+                formData.append('student_id', selectedStudentId);  // ✅ Use selected student
+                formData.append('sentence_id', gameState.currentSentence.id);
+                formData.append('session_data', JSON.stringify({
+                    start_time: gameState.startTime,
+                    end_time: gameState.stopTime
+                }));
+                // ✅ ALWAYS send local analysis for database backup
+                formData.append('frontend_analysis', JSON.stringify(localAnalysis));
+
+                console.log('📤 Sending audio to backend:', filename, 'Size:', audioBlob.size);
+                console.log('🔗 Backend URL:', gameState.backendUrl);
+                console.log('📋 FormData contents:');
+                console.log('  - file:', filename, '(', audioBlob.size, 'bytes)');
+                console.log('  - student_id:', selectedStudentId);
+                console.log('  - sentence_id:', gameState.currentSentence.id);
+                console.log('  - frontend_analysis:', localAnalysis);
+
+                // Send to backend
+                const response = await fetch(`${gameState.backendUrl}/upload-audio`, {
+                    method: 'POST',
+                    body: formData
+                    // ✅ Don't set Content-Type header - let browser set it automatically with boundary
+                });
+
+                console.log('📥 Backend response status:', response.status);
+                console.log('📥 Backend response headers:', response.headers);
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('❌ Backend error:', errorText);
+                    throw new Error(`Backend processing failed: ${response.status} - ${errorText}`);
+                }
+
+                const analysis = await response.json();
+                console.log('✅ Backend analysis received:', analysis);
+
+                // ✅ Check if backend wants us to use local analysis
+                let finalAnalysis = analysis;
+                if (analysis.use_frontend_analysis === true || analysis.fluency_score === 0) {
+                    console.log('⚠️ Backend cannot analyze WebM - using local analysis');
+                    finalAnalysis = calculateLocalScore();
+                    // Keep session_id from backend if available
+                    if (analysis.session_id) {
+                        finalAnalysis.session_id = analysis.session_id;
+                    }
+                }
+
+                // Store session ID
+                gameState.currentSessionId = finalAnalysis.session_id;
+
+                // Display results
+                displayProfessionalResults(finalAnalysis);
+
+                // Play result sound only if not already played
+                if (!gameState.hasPlayedResultSound) {
+                    const scoreToPlay = finalAnalysis.final_score || finalAnalysis.fluency_score;
+                    playResultSound(scoreToPlay);
+                    gameState.hasPlayedResultSound = true;
+                }
+
+            } catch (error) {
+                console.error('❌ Error processing audio:', error);
+                console.error('Error details:', error.message);
+                console.error('Error stack:', error.stack);
+
+                // Fallback to local analysis
+                console.log('⚠️ Falling back to local analysis...');
+                const localAnalysis = calculateLocalScore();
+                displayProfessionalResults(localAnalysis);
+
+                // Play result sound only if not already played
+                if (!gameState.hasPlayedResultSound) {
+                    playResultSound(localAnalysis.fluency_score);
+                    gameState.hasPlayedResultSound = true;
+                }
+            }
+
+            // Update UI
+            document.getElementById('statusIndicator').textContent = 'Analysis complete - Press SPACEBAR to try again!';
+            document.getElementById('statusIndicator').className = 'status-indicator status-silent';
+        }
+
+        function calculateLocalScore() {
+            // Calculate times in SECONDS
+            const totalDuration = (gameState.stopTime - gameState.startTime) / 1000;
+            const timeToFirstSpeaking = gameState.firstSpeakingTime ? (gameState.firstSpeakingTime - gameState.startTime) / 1000 : 0;
+            const firstPause = gameState.firstPauseTime ? (gameState.firstPauseTime - gameState.startTime) / 1000 : totalDuration;
+
+            // 🐛 DEBUG LOGS
+            console.log('📊 LOCAL SCORE CALCULATION:');
+            console.log('  - startTime:', gameState.startTime);
+            console.log('  - stopTime:', gameState.stopTime);
+            console.log('  - totalDuration:', totalDuration.toFixed(2), 's');
+            console.log('  - firstPauseTime (raw):', gameState.firstPauseTime);
+            console.log('  - firstPause (calculated):', firstPause.toFixed(2), 's');
+            console.log('  - pauseCount:', gameState.pauseCount);
+            console.log('  - firstPauseDetected:', gameState.firstPauseDetected);
+
+            // ✅ CORRECT FORMULA: (Time before first pause / Total duration) × 100
+            // If no pause: firstPause = totalDuration → Score = 100%
+            const fluencyScore = totalDuration > 0 ? (firstPause / totalDuration) * 100 : 0;
+
+            console.log('  - fluencyScore:', fluencyScore.toFixed(2), '%');
+
+            return {
+                fluency_score: Math.round(fluencyScore),
+                final_score: Math.round(fluencyScore),
+                first_pause_time: parseFloat(firstPause.toFixed(2)), // ✅ In SECONDS
+                total_duration: parseFloat(totalDuration.toFixed(2)), // ✅ In SECONDS
+                volume_consistency: 0.7, // Simulated
+                speech_rate: 120, // Simulated (WPM)
+                rate_assessment: "Local analysis (no backend)",
+                pause_status: firstPause >= totalDuration * 0.95 ? "No significant pause detected!" : `First pause at ${firstPause.toFixed(2)}s`,
+                num_pauses: gameState.pauseCount || 0
+            };
+        }
+
+        function displayProfessionalResults(analysis) {
+            // ✅ Use final_score if available (includes bonuses)
+            const displayScore = analysis.final_score || analysis.fluency_score;
+
+            // Update results panel
+            // ✅ analysis values are already in SECONDS (not milliseconds)
+            document.getElementById('fluencyScoreResult').textContent = displayScore + '/100';
+            document.getElementById('totalDurationResult').textContent = parseFloat(analysis.total_duration).toFixed(2) + 's';
+            document.getElementById('firstPauseResult').textContent = parseFloat(analysis.first_pause_time).toFixed(2) + 's';
+            document.getElementById('volumeConsistencyResult').textContent = Math.round((analysis.volume_consistency || 0) * 100) + '%';
+            document.getElementById('speechRateResult').textContent = ((analysis.speech_rate || 0) / 60).toFixed(2) + ' WPS';
+
+            // Show results panel
+            document.getElementById('resultsPanel').classList.add('show');
+
+            // Display score with visual feedback
+            displayScoreVisual(displayScore);
+
+            // Show popup modal with detailed results
+            showResultsPopup(analysis);
+        }
+
+        function displayScoreVisual(score) {
+            const scoreDisplay = document.getElementById('scoreDisplay');
+            const scoreText = document.getElementById('scoreText');
+            const scoreMessage = document.getElementById('scoreMessage');
+            
+            scoreText.textContent = `Score: ${score}`;
+            
+            // Determine score category and message
+            let category, message, className;
+            
+            if (score >= 90) {
+                category = 'Excellent';
+                message = 'Outstanding fluency! 🎉';
+                className = 'score-excellent';
+            } else if (score >= 75) {
+                category = 'Good';
+                message = 'Great job! Keep it up! 👍';
+                className = 'score-good';
+            } else if (score >= 60) {
+                category = 'Average';
+                message = 'Not bad, but room for improvement 📈';
+                className = 'score-average';
+            } else {
+                category = 'Needs Practice';
+                message = 'Keep practicing! You can do better! 💪';
+                className = 'score-poor';
+            }
+            
+            scoreMessage.textContent = message;
+            scoreDisplay.className = `score-display ${className}`;
+            scoreDisplay.style.display = 'block';
+        }
+
+        function playResultSound(score) {
+            // Play voice feedback based on score
+            playVoiceFeedback(score);
+            
+            if (!gameState.audioContext) return;
+            
+            const oscillator = gameState.audioContext.createOscillator();
+            const gainNode = gameState.audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(gameState.audioContext.destination);
+            
+            if (score >= 80) {
+                // Success chord - C major
+                const frequencies = [523, 659, 784]; // C, E, G
+                frequencies.forEach((freq, index) => {
+                    setTimeout(() => {
+                        const osc = gameState.audioContext.createOscillator();
+                        const gain = gameState.audioContext.createGain();
+                        osc.connect(gain);
+                        gain.connect(gameState.audioContext.destination);
+                        osc.frequency.setValueAtTime(freq, gameState.audioContext.currentTime);
+                        gain.gain.setValueAtTime(0.1, gameState.audioContext.currentTime);
+                        gain.gain.exponentialRampToValueAtTime(0.01, gameState.audioContext.currentTime + 0.3);
+                        osc.start();
+                        osc.stop(gameState.audioContext.currentTime + 0.3);
+                    }, index * 100);
+                });
+            } else if (score >= 60) {
+                // Neutral sound
+                oscillator.frequency.setValueAtTime(440, gameState.audioContext.currentTime);
+                gainNode.gain.setValueAtTime(0.1, gameState.audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, gameState.audioContext.currentTime + 0.2);
+                oscillator.start();
+                oscillator.stop(gameState.audioContext.currentTime + 0.2);
+            } else {
+                // Encouraging sound - ascending scale
+                const frequencies = [440, 494, 523]; // A, B, C
+                frequencies.forEach((freq, index) => {
+                    setTimeout(() => {
+                        const osc = gameState.audioContext.createOscillator();
+                        const gain = gameState.audioContext.createGain();
+                        osc.connect(gain);
+                        gain.connect(gameState.audioContext.destination);
+                        osc.frequency.setValueAtTime(freq, gameState.audioContext.currentTime);
+                        gain.gain.setValueAtTime(0.08, gameState.audioContext.currentTime);
+                        gain.gain.exponentialRampToValueAtTime(0.01, gameState.audioContext.currentTime + 0.15);
+                        osc.start();
+                        osc.stop(gameState.audioContext.currentTime + 0.15);
+                    }, index * 150);
+                });
+            }
+        }
+        
+        function playVoiceFeedback(score) {
+            try {
+                console.log(`🔊 Attempting to play audio for score: ${score}`);
+
+                // ✅ Use preloaded audio instead of creating new Audio()
+                let audio;
+                if (score >= 80) {
+                    audio = gameState.winnerAudio;
+                    console.log('✅ Using preloaded winner.mp3');
+                } else {
+                    audio = gameState.gameoverAudio;
+                    console.log('✅ Using preloaded gameover.mp3');
+                }
+
+                // Reset audio to start if already played
+                if (!audio) {
+                    console.error('❌ Audio not preloaded!');
+                    const message = score >= 80 ? '🎉 Winner! Great job!' : '💪 Game Over! Try again!';
+                    showVoiceMessage(message);
+                    return;
+                }
+
+                audio.currentTime = 0; // Reset to start
+
+                // Play the audio with better error handling
+                const playPromise = audio.play();
+
+                if (playPromise !== undefined) {
+                    playPromise
+                        .then(() => {
+                            console.log('✅ Audio played successfully!');
+                        })
+                        .catch(error => {
+                            console.error('❌ Audio play failed:', error.name, error.message);
+
+                            // Show detailed error
+                            if (error.name === 'NotAllowedError') {
+                                console.error('❌ Autoplay blocked by browser. User interaction required.');
+                                console.error('💡 Tip: Click Start Game first to enable audio playback.');
+                            } else if (error.name === 'NotSupportedError') {
+                                console.error('❌ Audio format not supported.');
+                            } else if (error.name === 'AbortError') {
+                                console.error('❌ Audio playback aborted.');
+                            }
+
+                            // Fallback: show a message instead
+                            const message = score >= 80 ? '🎉 Winner! Great job!' : '💪 Game Over! Try again!';
+                            showVoiceMessage(message);
+                        });
+                }
+
+            } catch (error) {
+                console.error('❌ Exception in playVoiceFeedback:', error);
+                const message = score >= 80 ? '🎉 Winner! Great job!' : '💪 Game Over! Try again!';
+                showVoiceMessage(message);
+            }
+        }
+        
+        function showVoiceMessage(message) {
+            // Create a temporary message display
+            const messageDiv = document.createElement('div');
+            messageDiv.textContent = message;
+            messageDiv.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: rgba(0, 0, 0, 0.8);
+                color: white;
+                padding: 20px 40px;
+                border-radius: 10px;
+                font-size: 24px;
+                font-weight: bold;
+                z-index: 1000;
+                animation: fadeInOut 3s ease-in-out;
+            `;
+            
+            // Add CSS animation
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes fadeInOut {
+                    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+                    20% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+                    80% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+                    100% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+                }
+            `;
+            document.head.appendChild(style);
+            
+            document.body.appendChild(messageDiv);
+            
+            // Remove message after 3 seconds
+            setTimeout(() => {
+                if (messageDiv.parentNode) {
+                    messageDiv.parentNode.removeChild(messageDiv);
+                }
+                if (style.parentNode) {
+                    style.parentNode.removeChild(style);
+                }
+            }, 3000);
+        }
+
+        function showResultsPopup(analysis) {
+            // Force exit fullscreen if currently in fullscreen
+            if (gameState.isFullscreen || document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement) {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                } else if (document.webkitExitFullscreen) {
+                    document.webkitExitFullscreen();
+                } else if (document.mozCancelFullScreen) {
+                    document.mozCancelFullScreen();
+                } else if (document.msExitFullscreen) {
+                    document.msExitFullscreen();
+                }
+                gameState.isFullscreen = false;
+                
+                // Wait a bit for fullscreen to exit
+                setTimeout(() => {
+                    createResultsModal(analysis);
+                }, 200);
+            } else {
+                createResultsModal(analysis);
+            }
+        }
+
+        function createResultsModal(analysis) {
+            // Create modal overlay
+            const modalOverlay = document.createElement('div');
+            modalOverlay.className = 'modal-overlay';
+            modalOverlay.id = 'resultsModal';
+            
+            // Calculate pause statistics
+            const totalDuration = (gameState.stopTime - gameState.startTime) / 1000;
+            const averagePauseTime = gameState.pauseTimes.length > 0 ? 
+                (gameState.pauseTimes.reduce((sum, time) => sum + time, 0) / gameState.pauseTimes.length) / 1000 : 0;
+            const longestPause = gameState.pauseTimes.length > 0 ? 
+                Math.max(...gameState.pauseTimes) / 1000 : 0;
+            
+            // ✅ Use final_score for display (includes bonuses)
+            const displayScore = analysis.final_score || analysis.fluency_score;
+
+            // Determine score category and styling
+            let scoreClass, title, message;
+            if (displayScore >= 90) {
+                scoreClass = 'score-excellent';
+                title = '🎉 Excellent!';
+                message = 'Outstanding fluency! You speak very smoothly!';
+            } else if (displayScore >= 75) {
+                scoreClass = 'score-good';
+                title = '👍 Great Job!';
+                message = 'Good fluency! Keep up the great work!';
+            } else if (displayScore >= 60) {
+                scoreClass = 'score-average';
+                title = '📈 Not Bad!';
+                message = 'Room for improvement, but you\'re getting there!';
+            } else {
+                scoreClass = 'score-poor';
+                title = '💪 Keep Practicing!';
+                message = 'More practice will help improve your fluency!';
+            }
+            
+            // Create pause breakdown HTML
+            let pauseBreakdownHTML = '';
+            if (gameState.pauseTimes.length > 0) {
+                pauseBreakdownHTML = `
+                    <div class="pause-breakdown">
+                        <h4>📊 Chi tiết các lần dừng:</h4>
+                        ${gameState.pauseTimes.map((time, index) => `
+                            <div class="pause-item">
+                                <span>Lần dừng ${index + 1}:</span>
+                                <span>${(time / 1000).toFixed(2)}s</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            } else {
+                pauseBreakdownHTML = `
+                    <div class="pause-breakdown">
+                        <h4>🎯 Tuyệt vời!</h4>
+                        <p>Bạn đã nói liên tục không có lần dừng nào!</p>
+                    </div>
+                `;
+            }
+            
+            modalOverlay.innerHTML = `
+                <div class="modal-content">
+                    <button class="close-btn" onclick="closeResultsModal()">&times;</button>
+                    
+                    <div class="modal-header">
+                        <div class="modal-title">${title}</div>
+                        <p>${message}</p>
+                    </div>
+                    
+                    <div class="modal-score ${scoreClass}">
+                        ${displayScore}/100
+                    </div>
+
+                    <div class="modal-details">
+                        <div class="detail-row">
+                            <span class="detail-label">⏱️ Tổng thời gian:</span>
+                            <span class="detail-value">${totalDuration.toFixed(2)}s</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">🎯 Điểm số:</span>
+                            <span class="detail-value">${displayScore}/100</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">⏰ Thời gian đến lần dừng đầu:</span>
+                            <span class="detail-value">${parseFloat(analysis.first_pause_time).toFixed(2)}s</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">📊 Tốc độ nói (WPS):</span>
+                            <span class="detail-value">${(analysis.speech_rate / 60).toFixed(2)}</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">🔊 Độ ổn định âm lượng:</span>
+                            <span class="detail-value">${Math.round((analysis.volume_consistency || 0) * 100)}%</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">⏸️ Số lần dừng:</span>
+                            <span class="detail-value">${gameState.pauseCount}</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">⏱️ Tổng thời gian dừng:</span>
+                            <span class="detail-value">${(gameState.totalPauseTime / 1000).toFixed(2)}s</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">📈 Thời gian dừng trung bình:</span>
+                            <span class="detail-value">${averagePauseTime.toFixed(2)}s</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">⏰ Lần dừng dài nhất:</span>
+                            <span class="detail-value">${longestPause.toFixed(2)}s</span>
+                        </div>
+                    </div>
+                    
+                    ${pauseBreakdownHTML}
+                    
+                    <div class="modal-buttons">
+                        <button class="modal-btn modal-btn-primary" onclick="playAgain()">Chơi lại</button>
+                        <button class="modal-btn modal-btn-secondary" onclick="closeResultsModal()">Đóng</button>
+                    </div>
+                </div>
+            `;
+            
+            // Add to page
+            document.body.appendChild(modalOverlay);
+            
+            // Play result sound
+            playResultSound(analysis.fluency_score);
+        }
+
+        function closeResultsModal() {
+            const modal = document.getElementById('resultsModal');
+            if (modal) {
+                modal.remove();
+            }
+        }
+
+        function playAgain() {
+            closeResultsModal();
+            resetGame();
+        }
+
+        function gameLoop() {
+            if (gameState.isRunning) {
+                // Analyze audio
+                if (gameState.analyser && gameState.isListening) {
+                    // ✅ CHÍNH XÁC: Lấy TIME DOMAIN data (amplitude) thay vì FREQUENCY data
+                    gameState.analyser.getByteTimeDomainData(gameState.dataArray);
+                    const rmsVolume = calculateRMS(gameState.dataArray);
+                    const dbVolume = calculateDB(rmsVolume);
+                    const isCurrentlySpeaking = dbVolume > gameState.volumeThreshold;
+
+                    handleSpeakingDetection(isCurrentlySpeaking, rmsVolume);
+                }
+
+                // Update bird physics
+                updateBirdPhysics();
+            }
+
+            // Render game
+            renderGame();
+
+            // Continue loop
+            gameState.animationId = requestAnimationFrame(gameLoop);
+        }
+
+        function handleSpeakingDetection(isSpeaking, volume) {
+            const now = Date.now();
+            const dbVolume = calculateDB(volume);
+            gameState.currentVolume = dbVolume;
+
+            // CHÍNH XÁC: Kiểm tra im lặng dựa trên RMS và dB
+            // Time domain RMS có giá trị khác: khoảng 0-30 cho speech thông thường
+            const isTrueSilence = volume < 1.0; // RMS < 1.0 = im lặng thực sự
+            const isActuallySpeaking = !isTrueSilence && dbVolume > gameState.volumeThreshold;
+
+            // Update volume display for debugging
+            document.getElementById('volumeValue').textContent = `${Math.round(dbVolume)} dB (RMS: ${Math.round(volume)})`;
+
+            if (isActuallySpeaking) {
+                // ===== ĐANG NÓI =====
+                gameState.isSpeaking = true;
+                gameState.lastSpeakingTime = now;
+
+                // Mark first sound detected
+                if (!gameState.hasDetectedFirstSound) {
+                    gameState.hasDetectedFirstSound = true;
+                    gameState.firstSpeakingTime = now;
+                    console.log('First sound detected!');
+                }
+
+                // Track total speaking time
+                if (gameState.lastVolumeCheck) {
+                    gameState.totalSpeakingTime += now - gameState.lastVolumeCheck;
+                }
+                gameState.lastVolumeCheck = now;
+
+                // Kết thúc pause nếu đang trong pause
+                if (gameState.currentPauseStart) {
+                    const pauseDuration = now - gameState.currentPauseStart;
+                    gameState.pauseTimes.push(pauseDuration);
+                    gameState.totalPauseTime += pauseDuration;
+                    gameState.pauseCount++;
+                    gameState.currentPauseStart = null;
+                    console.log(`✅ Pause #${gameState.pauseCount} ended: ${(pauseDuration/1000).toFixed(2)}s`);
+                }
+
+                // Update progress
+                updateProgress();
+
+                // Update status
+                document.getElementById('statusIndicator').textContent = `🎤 Speaking (${Math.round(dbVolume)} dB / RMS: ${Math.round(volume)})`;
+                document.getElementById('statusIndicator').className = 'status-indicator status-speaking';
+
+            } else {
+                // ===== IM LẶNG =====
+                gameState.isSpeaking = false;
+
+                // Chỉ tính pause SAU KHI đã nói lần đầu
+                if (gameState.hasDetectedFirstSound && gameState.lastSpeakingTime) {
+                    const silenceDuration = now - gameState.lastSpeakingTime;
+
+                    // BẮT ĐẦU pause khi im lặng LÂU HƠN pause threshold
+                    if (!gameState.currentPauseStart && silenceDuration >= gameState.pauseThreshold) {
+                        gameState.currentPauseStart = gameState.lastSpeakingTime;
+                        console.log(`⏸️ Pause started (silence: ${(silenceDuration/1000).toFixed(2)}s >= threshold: ${(gameState.pauseThreshold/1000).toFixed(2)}s)`);
+
+                        // Ghi nhận first pause time
+                        if (!gameState.firstPauseDetected) {
+                            gameState.firstPauseTime = gameState.lastSpeakingTime;
+                            gameState.firstPauseDetected = true;
+                            console.log(`🎯 First pause detected at ${((gameState.firstPauseTime - gameState.startTime)/1000).toFixed(2)}s`);
+                        }
+                    }
+
+                    // Hiển thị thời gian im lặng với trạng thái chính xác
+                    const silenceSeconds = (silenceDuration / 1000).toFixed(1);
+                    const thresholdSeconds = (gameState.pauseThreshold / 1000).toFixed(1);
+
+                    if (silenceDuration < gameState.pauseThreshold) {
+                        // IM LẶNG NGẮN - Chim chờ (màu xanh)
+                        document.getElementById('statusIndicator').textContent = `⏳ Waiting ${silenceSeconds}s / ${thresholdSeconds}s (${Math.round(dbVolume)} dB / RMS: ${Math.round(volume)})`;
+                        document.getElementById('statusIndicator').className = 'status-indicator status-listening';
+                    } else {
+                        // IM LẶNG DÀI - Chim rớt (màu đỏ)
+                        document.getElementById('statusIndicator').textContent = `⚠️ PAUSE ${silenceSeconds}s! (${Math.round(dbVolume)} dB / RMS: ${Math.round(volume)}) - Bird falling!`;
+                        document.getElementById('statusIndicator').className = 'status-indicator status-silent';
+                    }
+                } else {
+                    document.getElementById('statusIndicator').textContent = `⏳ Ready (${Math.round(dbVolume)} dB / RMS: ${Math.round(volume)}) - Start speaking!`;
+                    document.getElementById('statusIndicator').className = 'status-indicator status-listening';
+                }
+            }
+        }
+
+        function updateBirdPhysics() {
+            // Update background scrolling
+            updateBackground();
+
+            // Bird always moves forward (continuous movement)
+            gameState.bird.x += gameState.bird.forwardSpeed;
+
+            // Reset bird position when it goes off screen (continuous loop)
+            if (gameState.bird.x > gameState.canvas.width + 50) {
+                gameState.bird.x = -50;
+            }
+
+            // LOGIC MỚI: Chim chỉ rớt khi ĐÃ PAUSE (im lặng > pause threshold)
+            if (gameState.hasDetectedFirstSound) {
+                if (gameState.isSpeaking) {
+                    // ===== NÓI: Chim bay lên =====
+                    gameState.bird.isFalling = false;
+                    const volumeRatio = Math.min(gameState.currentVolume / 100, 1);
+                    gameState.bird.targetY = 50 + (volumeRatio * 300); // 50 to 350 range
+                } else {
+                    // ===== IM LẶNG: Kiểm tra đã pause chưa =====
+                    const now = Date.now();
+                    const silenceDuration = gameState.lastSpeakingTime ? (now - gameState.lastSpeakingTime) : 0;
+
+                    if (silenceDuration >= gameState.pauseThreshold) {
+                        // IM LẶNG > threshold → CHIM RỚT
+                        gameState.bird.isFalling = true;
+                        gameState.bird.targetY = gameState.canvas.height - 50;
+                        gameState.bird.velocity += gameState.bird.gravity;
+                    } else {
+                        // IM LẶNG < threshold → CHIM GIỮ NGUYÊN VỊ TRÍ (đợi tiếp)
+                        gameState.bird.isFalling = false;
+                        // Giữ nguyên targetY hiện tại, không thay đổi
+                    }
+                }
+            } else {
+                // ===== CHƯA NÓI LẦN ĐẦU: Chim ở giữa =====
+                gameState.bird.isFalling = false;
+                gameState.bird.targetY = 200; // Neutral height
+                gameState.bird.velocity = 0;
+            }
+
+            // Smooth movement towards target height
+            const heightDiff = gameState.bird.targetY - gameState.bird.y;
+            gameState.bird.velocity = heightDiff * 0.08; // Slower, smoother movement
+            gameState.bird.y += gameState.bird.velocity;
+
+            // Keep bird within canvas bounds
+            if (gameState.bird.y < 20) {
+                gameState.bird.y = 20;
+                gameState.bird.velocity = 0;
+            }
+            if (gameState.bird.y > gameState.canvas.height - 30) {
+                gameState.bird.y = gameState.canvas.height - 30;
+                gameState.bird.velocity = 0;
+            }
+        }
+        
+        function updateBackground() {
+            // Move background elements
+            gameState.background.offset += gameState.background.speed;
+            
+            // Update clouds
+            gameState.background.clouds.forEach(cloud => {
+                cloud.x -= cloud.speed;
+                if (cloud.x < -cloud.size) {
+                    cloud.x = gameState.canvas.width + cloud.size;
+                    cloud.y = Math.random() * 150 + 50;
+                }
+            });
+            
+            // Update obstacles
+            gameState.background.obstacles.forEach(obstacle => {
+                obstacle.x -= gameState.background.speed;
+                if (obstacle.x < -obstacle.width) {
+                    obstacle.x = gameState.canvas.width + Math.random() * 200;
+                }
+            });
+        }
+
+        function renderGame() {
+            const ctx = gameState.ctx;
+            const canvas = gameState.canvas;
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw background
+            const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            gradient.addColorStop(0, '#87CEEB');
+            gradient.addColorStop(1, '#98FB98');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw scrolling background elements
+            drawBackground(ctx, canvas);
+            
+            // Draw bird with color based on state (15% bigger)
+            const birdRadius = 17.25; // 15% bigger than 15
+            // Only show red when falling AND after first sound detected
+            const birdColor = (gameState.bird.isFalling && gameState.hasDetectedFirstSound) ? '#FF0000' : '#FFD700';
+            ctx.fillStyle = birdColor;
+            ctx.beginPath();
+            ctx.arc(gameState.bird.x, gameState.bird.y, birdRadius, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Draw bird eye (scaled up)
+            ctx.fillStyle = '#000';
+            ctx.beginPath();
+            ctx.arc(gameState.bird.x + 6, gameState.bird.y - 6, 3.5, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Draw bird beak (scaled up)
+            ctx.fillStyle = '#FFA500';
+            ctx.beginPath();
+            ctx.moveTo(gameState.bird.x + birdRadius, gameState.bird.y);
+            ctx.lineTo(gameState.bird.x + birdRadius + 12, gameState.bird.y - 4);
+            ctx.lineTo(gameState.bird.x + birdRadius + 12, gameState.bird.y + 4);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Draw bird wings (add some animation, scaled up)
+            if (gameState.isSpeaking && gameState.hasDetectedFirstSound) {
+                ctx.fillStyle = birdColor;
+                ctx.beginPath();
+                ctx.ellipse(gameState.bird.x - 12, gameState.bird.y, 9, 5, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.ellipse(gameState.bird.x - 12, gameState.bird.y + 6, 7, 4, 0, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // ✅ DEBUG: Draw audio waveform visualization
+            if (gameState.isRunning && gameState.dataArray) {
+                drawAudioWaveform(ctx, canvas);
+            }
+        }
+
+        function drawAudioWaveform(ctx, canvas) {
+            // Draw waveform at the top of the canvas
+            const waveformHeight = 60;
+            const waveformY = 10;
+
+            // Semi-transparent background
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+            ctx.fillRect(10, waveformY, canvas.width - 20, waveformHeight);
+
+            // Draw waveform
+            ctx.strokeStyle = '#00FF00';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+
+            const sliceWidth = (canvas.width - 20) / gameState.dataArray.length;
+            let x = 10;
+
+            for (let i = 0; i < gameState.dataArray.length; i++) {
+                const v = gameState.dataArray[i] / 255.0; // Normalize to 0-1
+                const y = waveformY + (v * waveformHeight);
+
+                if (i === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+
+                x += sliceWidth;
+            }
+
+            ctx.stroke();
+
+            // Draw RMS level indicator
+            const rmsVolume = calculateRMS(gameState.dataArray);
+            const rmsBarWidth = (rmsVolume / 255) * (canvas.width - 40);
+            ctx.fillStyle = gameState.isSpeaking ? '#00FF00' : '#FF0000';
+            ctx.fillRect(10, waveformY + waveformHeight + 5, rmsBarWidth, 10);
+
+            // Draw text labels
+            ctx.fillStyle = '#FFFFFF';
+            ctx.font = '12px Arial';
+            const dbVolume = calculateDB(rmsVolume);
+            ctx.fillText(`RMS: ${Math.round(rmsVolume)} | dB: ${Math.round(dbVolume)} | Threshold: ${gameState.volumeThreshold}`, 15, waveformY + waveformHeight + 30);
+        }
+        
+        function drawBackground(ctx, canvas) {
+            // Draw clouds
+            gameState.background.clouds.forEach(cloud => {
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                ctx.beginPath();
+                ctx.arc(cloud.x, cloud.y, cloud.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(cloud.x + cloud.size * 0.5, cloud.y, cloud.size * 0.7, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(cloud.x - cloud.size * 0.5, cloud.y, cloud.size * 0.7, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            
+            // Draw ground/obstacles
+            ctx.fillStyle = '#8B4513';
+            gameState.background.obstacles.forEach(obstacle => {
+                ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+            });
+            
+            // Draw spiky thorns at the bottom
+            drawSpikyThorns(ctx, canvas);
+        }
+        
+        function drawSpikyThorns(ctx, canvas) {
+            const groundY = canvas.height - 50;
+            const thornHeight = 20;
+            const thornSpacing = 15;
+            
+            ctx.fillStyle = '#8B0000'; // Dark red for danger
+            ctx.strokeStyle = '#654321';
+            ctx.lineWidth = 2;
+            
+            // Draw spiky thorns across the bottom
+            for (let x = 0; x < canvas.width; x += thornSpacing) {
+                ctx.beginPath();
+                ctx.moveTo(x, groundY);
+                ctx.lineTo(x + thornSpacing / 2, groundY - thornHeight);
+                ctx.lineTo(x + thornSpacing, groundY);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+            }
+            
+            // Draw ground line
+            ctx.strokeStyle = '#654321';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(0, groundY);
+            ctx.lineTo(canvas.width, groundY);
+            ctx.stroke();
+        }
+
+        function calculateRMS(dataArray) {
+            // ✅ CHÍNH XÁC: Tính RMS từ time domain data (amplitude)
+            // Time domain data: 0-255, với 128 là center (silence)
+            let sum = 0;
+            for (let i = 0; i < dataArray.length; i++) {
+                // Trừ 128 để lấy amplitude thực (âm hoặc dương)
+                const amplitude = (dataArray[i] - 128) / 128.0; // Normalize to -1 to 1
+                sum += amplitude * amplitude;
+            }
+            const rms = Math.sqrt(sum / dataArray.length);
+            // Scale back to 0-255 range for consistency
+            return rms * 255;
+        }
+
+        function calculateDB(rmsValue) {
+            // ✅ CHÍNH XÁC: Convert RMS to dB (decibels)
+            // RMS range: 0-255, với 0 = silence
+            if (rmsValue <= 0.001) return 0; // Silence = 0 dB
+
+            // Normalize to 0-1 range
+            const normalized = rmsValue / 255;
+
+            // Calculate dB: 20 * log10(amplitude)
+            const db = 20 * Math.log10(normalized);
+
+            // Scale to 0-100 range for UI display
+            // -60 dB (very quiet) = 0, 0 dB (full scale) = 100
+            const dbNormalized = Math.max(0, Math.min(100, (db + 60) * 1.67));
+
+            return dbNormalized;
+        }
+
+        function calculateCompletion() {
+            if (!gameState.currentSentence) return 0;
+            
+            const sentenceLength = gameState.currentSentence.sentence.length;
+            const estimatedSpeakingTime = sentenceLength * 100; // More realistic: 100ms per character
+            
+            // Use actual speaking time instead of total elapsed time
+            const completion = Math.min(100, (gameState.totalSpeakingTime / estimatedSpeakingTime) * 100);
+            
+            // If they've been speaking for a while, give them full completion
+            if (gameState.totalSpeakingTime > estimatedSpeakingTime * 0.8) {
+                return 100;
+            }
+            
+            return completion;
+        }
+
+        function updateProgress() {
+            const completion = calculateCompletion();
+            document.getElementById('progressFill').style.width = completion + '%';
+            document.getElementById('progressText').textContent = Math.round(completion) + '%';
+        }
+
+        function playSoundEffect(type) {
+            if (!gameState.audioContext) return;
+            
+            const oscillator = gameState.audioContext.createOscillator();
+            const gainNode = gameState.audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(gameState.audioContext.destination);
+            
+            switch(type) {
+                case 'highVolume':
+                    // High pitch beep for good volume
+                    oscillator.frequency.setValueAtTime(800, gameState.audioContext.currentTime);
+                    gainNode.gain.setValueAtTime(0.1, gameState.audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, gameState.audioContext.currentTime + 0.1);
+                    oscillator.start();
+                    oscillator.stop(gameState.audioContext.currentTime + 0.1);
+                    break;
+                    
+                case 'pause':
+                    // No sound when bird falls (as requested)
+                    break;
+            }
+        }
+
+        function selectSentence() {
+            const select = document.getElementById('sentenceSelect');
+            const sentenceId = parseInt(select.value);
+            
+            const sentence = gameState.sentences.find(s => s.id === sentenceId);
+            if (sentence) {
+                gameState.currentSentence = sentence;
+            }
+        }
+
+        function updateVolumeThreshold() {
+            gameState.volumeThreshold = parseInt(document.getElementById('volumeThreshold').value);
+            document.getElementById('volumeValue').textContent = gameState.volumeThreshold;
+        }
+
+        function updatePauseThreshold() {
+            const seconds = parseFloat(document.getElementById('pauseThreshold').value);
+            gameState.pauseThreshold = seconds * 1000; // Convert to ms for internal calculations
+            document.getElementById('pauseValue').textContent = seconds.toFixed(1) + 's';
+        }
+
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const csv = e.target.result;
+                    const parsed = Papa.parse(csv, { header: true });
+                    
+                    if (parsed.errors.length > 0) {
+                        alert('Error parsing CSV: ' + parsed.errors[0].message);
+                        return;
+                    }
+                    
+                    gameState.sentences = parsed.data.filter(row => row.sentence && row.sentence.trim());
+                    
+                    // Populate sentence selector
+                    const select = document.getElementById('sentenceSelect');
+                    select.innerHTML = '';
+                    select.disabled = false;
+                    
+                    gameState.sentences.forEach((sentence, index) => {
+                        const option = document.createElement('option');
+                        option.value = sentence.id || index + 1;
+                        option.textContent = sentence.sentence;
+                        select.appendChild(option);
+                    });
+                    
+                    // Select first sentence by default
+                    if (gameState.sentences.length > 0) {
+                        selectSentence();
+                    }
+                    
+                } catch (error) {
+                    console.error('File parsing error:', error);
+                    alert('Error parsing file. Please ensure it\'s a valid CSV with "id" and "sentence" columns.');
+                }
+            };
+            
+            reader.readAsText(file);
+        }
+
+        function exportResults() {
+            if (gameState.scores.length === 0) {
+                alert('No results to export!');
+                return;
+            }
+            
+            const csv = Papa.unparse(gameState.scores);
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'speaking_fluency_results.csv';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        }
+
+        function resetGame() {
+            // Stop any ongoing game without playing sounds
+            stopGame(false);
+            
+            // Reset game state
+            gameState.scores = [];
+            gameState.currentSentence = null;
+            gameState.sentences = [];
+            gameState.startTime = null;
+            gameState.firstPauseTime = null;
+            gameState.firstPauseDetected = false;
+            gameState.isSpeaking = false;
+            gameState.lastSpeakingTime = null;
+            gameState.totalSpeakingTime = 0;
+            gameState.lastVolumeCheck = null;
+            gameState.firstSpeakingTime = null;
+            gameState.stopTime = null;
+            gameState.currentSessionId = null;
+            gameState.hasPlayedResultSound = false;
+            gameState.hasDetectedFirstSound = false;
+            
+            // Reset pause tracking
+            gameState.pauseCount = 0;
+            gameState.pauseTimes = [];
+            gameState.currentPauseStart = null;
+            gameState.totalPauseTime = 0;
+            gameState.firstPauseDetected = false;
+            gameState.firstPauseTime = null;
+            
+            // Reset bird to initial state
+            gameState.bird.x = 100;
+            gameState.bird.y = 200;
+            gameState.bird.velocity = 0;
+            gameState.bird.isFalling = false;
+            gameState.bird.targetY = 200;
+            
+            // Reset background
+            gameState.background.offset = 0;
+            gameState.background.clouds = [];
+            gameState.background.obstacles = [];
+            initBackground();
+            
+            // Reset UI
+            document.getElementById('sentenceSelect').innerHTML = '<option>Loading sentences...</option>';
+            document.getElementById('sentenceSelect').disabled = true;
+            document.getElementById('resultsPanel').classList.remove('show');
+            document.getElementById('scoreDisplay').style.display = 'none';
+            document.getElementById('exportBtn').disabled = true;
+            document.getElementById('progressFill').style.width = '0%';
+            document.getElementById('progressText').textContent = '0%';
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('stopBtn').disabled = true;
+            document.getElementById('statusIndicator').textContent = 'Microphone ready! Select a sentence and press SPACEBAR to start!';
+            document.getElementById('statusIndicator').className = 'status-indicator status-listening';
+            
+            // Hide WPM info panel if open
+            document.getElementById('wpmExplanation').style.display = 'none';
+            document.getElementById('wpmInfoBtn').textContent = 'WPM Calculation Info';
+            document.getElementById('wpmInfoBtn').style.background = '#6c757d';
+            
+            // Reload sentences
+            loadSentencesFromBackend();
+        }
+        
+        function toggleWpmInfo() {
+            const wpmPanel = document.getElementById('wpmExplanation');
+            const button = document.getElementById('wpmInfoBtn');
+            
+            if (wpmPanel.style.display === 'none' || wpmPanel.style.display === '') {
+                wpmPanel.style.display = 'block';
+                button.textContent = 'Hide WPM Info';
+                button.style.background = '#dc3545';
+            } else {
+                wpmPanel.style.display = 'none';
+                button.textContent = 'WPM Calculation Info';
+                button.style.background = '#6c757d';
+            }
+        }
+        
+        function toggleControlsPanel() {
+            const controlsPanel = document.querySelector('.controls-panel');
+            const gameArea = document.querySelector('.game-area');
+            const toggleBtn = document.getElementById('toggleControlsBtn');
+            
+            gameState.controlsVisible = !gameState.controlsVisible;
+            
+            if (gameState.controlsVisible) {
+                // Show controls panel
+                controlsPanel.classList.remove('hidden');
+                gameArea.classList.remove('fullscreen');
+                toggleBtn.textContent = '⚙️';
+                toggleBtn.title = 'Hide Controls Panel';
+                toggleBtn.classList.remove('controls-hidden');
+            } else {
+                // Hide controls panel
+                controlsPanel.classList.add('hidden');
+                gameArea.classList.add('fullscreen');
+                toggleBtn.textContent = '👁️';
+                toggleBtn.title = 'Show Controls Panel';
+                toggleBtn.classList.add('controls-hidden');
+            }
+            
+            // Resize canvas after toggle
+            setTimeout(() => {
+                const isFullscreen = gameArea.classList.contains('fullscreen');
+                if (isFullscreen) {
+                    gameState.canvas.width = window.innerWidth;
+                    gameState.canvas.height = window.innerHeight;
+                } else {
+                    gameState.canvas.width = 700;
+                    gameState.canvas.height = 400;
+                }
+            }, 300); // Wait for CSS transition
+        }
+        
+        function toggleFullscreen() {
+            const gameArea = document.querySelector('.game-area');
+            const fullscreenBtn = document.getElementById('fullscreenBtn');
+            
+            if (!gameState.isFullscreen) {
+                // Enter fullscreen
+                if (gameArea.requestFullscreen) {
+                    gameArea.requestFullscreen();
+                } else if (gameArea.webkitRequestFullscreen) {
+                    gameArea.webkitRequestFullscreen();
+                } else if (gameArea.msRequestFullscreen) {
+                    gameArea.msRequestFullscreen();
+                }
+                
+                gameState.isFullscreen = true;
+                fullscreenBtn.textContent = '⛶';
+                fullscreenBtn.title = 'Exit Fullscreen';
+                
+                // Hide controls panel when entering fullscreen
+                if (gameState.controlsVisible) {
+                    toggleControlsPanel();
+                }
+                
+            } else {
+                // Exit fullscreen
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                } else if (document.webkitExitFullscreen) {
+                    document.webkitExitFullscreen();
+                } else if (document.msExitFullscreen) {
+                    document.msExitFullscreen();
+                }
+                
+                gameState.isFullscreen = false;
+                fullscreenBtn.textContent = '⛶';
+                fullscreenBtn.title = 'Enter Fullscreen';
+            }
+        }
+        
+        // Listen for fullscreen changes
+        document.addEventListener('fullscreenchange', handleFullscreenChange);
+        document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+        document.addEventListener('msfullscreenchange', handleFullscreenChange);
+        
+        function handleFullscreenChange() {
+            const gameArea = document.querySelector('.game-area');
+            const fullscreenBtn = document.getElementById('fullscreenBtn');
+            
+            const isCurrentlyFullscreen = !!(
+                document.fullscreenElement ||
+                document.webkitFullscreenElement ||
+                document.msFullscreenElement
+            );
+            
+            gameState.isFullscreen = isCurrentlyFullscreen;
+            
+            if (isCurrentlyFullscreen) {
+                fullscreenBtn.textContent = '⛶';
+                fullscreenBtn.title = 'Exit Fullscreen';
+                // Resize canvas for fullscreen
+                setTimeout(() => {
+                    gameState.canvas.width = window.innerWidth;
+                    gameState.canvas.height = window.innerHeight;
+                }, 100);
+            } else {
+                fullscreenBtn.textContent = '⛶';
+                fullscreenBtn.title = 'Enter Fullscreen';
+                // Resize canvas for normal mode
+                setTimeout(() => {
+                    gameState.canvas.width = 700;
+                    gameState.canvas.height = 400;
+                }, 100);
+            }
+        }
+
+        // Initialize game when page loads
+        window.addEventListener('load', initGame);
+    </script>
+</body>
+</html>
+
