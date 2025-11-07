@@ -32,10 +32,17 @@ class DuckCanFly {
         this.currentVolume = -80;
         this.isSpeaking = false;
 
+        // Fullscreen
+        this.isFullscreen = false;
+        this.originalCanvasWidth = 400;
+        this.originalCanvasHeight = 600;
+
         // Bind methods
         this.gameLoop = this.gameLoop.bind(this);
         this.startGame = this.startGame.bind(this);
         this.restartGame = this.restartGame.bind(this);
+        this.toggleFullscreen = this.toggleFullscreen.bind(this);
+        this.handleFullscreenChange = this.handleFullscreenChange.bind(this);
 
         // Initialize
         this.setupUI();
@@ -51,6 +58,15 @@ class DuckCanFly {
 
         // Restart button
         document.getElementById('restartBtn').addEventListener('click', this.restartGame);
+
+        // Fullscreen button
+        document.getElementById('fullscreenBtn').addEventListener('click', this.toggleFullscreen);
+
+        // Listen for fullscreen changes
+        document.addEventListener('fullscreenchange', this.handleFullscreenChange);
+        document.addEventListener('webkitfullscreenchange', this.handleFullscreenChange);
+        document.addEventListener('mozfullscreenchange', this.handleFullscreenChange);
+        document.addEventListener('MSFullscreenChange', this.handleFullscreenChange);
     }
 
     setupSettings() {
@@ -487,6 +503,134 @@ class DuckCanFly {
         // Show game over screen
         document.getElementById('finalScore').textContent = this.score;
         document.getElementById('gameOverScreen').classList.add('active');
+    }
+
+    toggleFullscreen() {
+        const gameWrapper = document.querySelector('.game-wrapper');
+        const fullscreenBtn = document.getElementById('fullscreenBtn');
+
+        if (!this.isFullscreen) {
+            // Enter fullscreen
+            gameWrapper.classList.add('fullscreen');
+            this.isFullscreen = true;
+            fullscreenBtn.textContent = '⤷';
+            fullscreenBtn.title = 'Exit Fullscreen';
+
+            // Request browser fullscreen
+            if (gameWrapper.requestFullscreen) {
+                gameWrapper.requestFullscreen();
+            } else if (gameWrapper.webkitRequestFullscreen) {
+                gameWrapper.webkitRequestFullscreen();
+            } else if (gameWrapper.mozRequestFullScreen) {
+                gameWrapper.mozRequestFullScreen();
+            } else if (gameWrapper.msRequestFullscreen) {
+                gameWrapper.msRequestFullscreen();
+            }
+
+            // Resize canvas to fullscreen
+            this.resizeCanvas();
+        } else {
+            // Exit fullscreen
+            gameWrapper.classList.remove('fullscreen');
+            this.isFullscreen = false;
+            fullscreenBtn.textContent = '⛶';
+            fullscreenBtn.title = 'Toggle Fullscreen';
+
+            // Exit browser fullscreen
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+            } else if (document.webkitExitFullscreen) {
+                document.webkitExitFullscreen();
+            } else if (document.mozCancelFullScreen) {
+                document.mozCancelFullScreen();
+            } else if (document.msExitFullscreen) {
+                document.msExitFullscreen();
+            }
+
+            // Restore original canvas size
+            this.resizeCanvas();
+        }
+    }
+
+    handleFullscreenChange() {
+        const isCurrentlyFullscreen = !!(
+            document.fullscreenElement ||
+            document.webkitFullscreenElement ||
+            document.mozFullScreenElement ||
+            document.msFullscreenElement
+        );
+
+        // If user exited fullscreen via browser controls (ESC key)
+        if (!isCurrentlyFullscreen && this.isFullscreen) {
+            const gameWrapper = document.querySelector('.game-wrapper');
+            const fullscreenBtn = document.getElementById('fullscreenBtn');
+
+            gameWrapper.classList.remove('fullscreen');
+            this.isFullscreen = false;
+            fullscreenBtn.textContent = '⛶';
+            fullscreenBtn.title = 'Toggle Fullscreen';
+
+            this.resizeCanvas();
+        }
+    }
+
+    resizeCanvas() {
+        if (this.isFullscreen) {
+            // Set canvas to window size
+            this.canvas.width = window.innerWidth;
+            this.canvas.height = window.innerHeight;
+
+            // Adjust duck position proportionally
+            const widthRatio = this.canvas.width / this.originalCanvasWidth;
+            const heightRatio = this.canvas.height / this.originalCanvasHeight;
+
+            // Keep duck in same relative position
+            if (this.gameState === 'start') {
+                this.duck.y = this.canvas.height / 2;
+            } else {
+                this.duck.y = this.duck.y * heightRatio;
+            }
+
+            // Adjust pipes proportionally
+            for (const pipe of this.pipes) {
+                pipe.x = pipe.x * widthRatio;
+                pipe.topHeight = pipe.topHeight * heightRatio;
+                pipe.bottomY = pipe.bottomY * heightRatio;
+            }
+
+            // Store new dimensions as reference
+            this.originalCanvasWidth = this.canvas.width;
+            this.originalCanvasHeight = this.canvas.height;
+        } else {
+            // Restore original size
+            const widthRatio = 400 / this.originalCanvasWidth;
+            const heightRatio = 600 / this.originalCanvasHeight;
+
+            // Adjust elements back
+            if (this.gameState !== 'start') {
+                this.duck.y = this.duck.y * heightRatio;
+            }
+
+            for (const pipe of this.pipes) {
+                pipe.x = pipe.x * widthRatio;
+                pipe.topHeight = pipe.topHeight * heightRatio;
+                pipe.bottomY = pipe.bottomY * heightRatio;
+            }
+
+            this.canvas.width = 400;
+            this.canvas.height = 600;
+            this.originalCanvasWidth = 400;
+            this.originalCanvasHeight = 600;
+
+            if (this.gameState === 'start') {
+                this.duck.y = this.config.game.duckStartY;
+            }
+        }
+
+        // Redraw after resize
+        if (this.gameState === 'start') {
+            this.drawStartScreen();
+        }
     }
 }
 
